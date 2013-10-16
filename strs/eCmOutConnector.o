@@ -1,0 +1,68 @@
+<Property id="3" title="Endpoint URL" visible="1">
+    <Initial>https://secure.ecircle-ag.com/cm42/api/soap/v2/</Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property id="3" title="User login (email)" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property id="4" title="User password" visible="1">
+    <Initial></Initial>
+    <Control>
+        <Password/>
+    </Control>
+</Property>
+<Property id="5" title="Proxy server" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property id="6" title="Proxy server port" visible="1">
+    <Initial></Initial>
+    <Control>
+        <Integer/>
+    </Control>
+</Property>
+<Property id="7" title="Proxy user name" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property id="8" title="Proxy user password" visible="1">
+    <Initial></Initial>
+    <Control>
+        <Password/>
+    </Control>
+</Property>
+<!--
+<Property id="9" title="Group ID" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property id="10" title="Group Name" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property id="11" title="Group Email" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+    -->
+<Property id="12" title="Log file for control XML" visible="1">
+    <Initial></Initial>
+    <Control>
+        <FileSystem dlgType="file" filter="All files (*.*)|*.*|||"/>
+    </Control>
+</Property>

@@ -1,0 +1,67 @@
+<Property title="Recipient Email" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property title="CC Email" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property title="BCC Email" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property title="Mail Subject" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property  title="Message ID" visible="1">
+    <Initial>401444594</Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property  title="Custom Value" visible="1">
+    <Initial>ID/value for tracking</Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+
+<Property title="Attachment #1" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property title="Attachment #2" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property title="Attachment #3" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property title="Attachment #4" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
+<Property title="Attachment #5" visible="1">
+    <Initial></Initial>
+    <Control>
+        <String/>
+    </Control>
+</Property>
