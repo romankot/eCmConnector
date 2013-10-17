@@ -121,6 +121,7 @@ public class eCmOutConnector implements StrsConnectable
 
         try
         {
+            m_recipients.clear();
             LoadStrsConfigVals(strsConfigVals);
 
             if ( !m_proxyserver.isEmpty() && !m_proxyserver_port.isEmpty() )
@@ -228,6 +229,7 @@ public class eCmOutConnector implements StrsConnectable
                 try {
                     //logDebug("Checking if user exist");
                     curr_user = ecmService.userGetByEmail(recipient_item);
+
                 }
                 catch (NoSuchObjectException_Exception e)
                 {
@@ -255,12 +257,24 @@ public class eCmOutConnector implements StrsConnectable
                     logDebug(String.format("User %s was created", recipient_item ));
 
                 }
-                finally {
-                    ecmService.messageSendTransactional(m_messageId, m_custom_value, curr_user.getId(), messageContent);
-                    logDebug(String.format("Message has been sent to %s. ", curr_user.getEmail()));
+                catch (InvalidParameterException_Exception e)
+                {
+                    logError(e.getLocalizedMessage());
+                }
+                catch (UnexpectedErrorException_Exception e)
+                {
+                    logError(e.getLocalizedMessage());
+                }
+                finally
+                {
+                    if (curr_user.getId() != 0)
+                    {
+                        ecmService.messageSendTransactional(m_messageId, m_custom_value, curr_user.getId(), messageContent);
+                        logDebug(String.format("Message has been sent to %s. ", curr_user.getEmail()));
+                    }
                 }
             }
-            m_recipients.clear();
+
         }
         catch (UnexpectedErrorException_Exception e)
         {

@@ -1,20 +1,23 @@
 import com.ecircle.developer.ecmapi.*;
 import org.apache.commons.codec.binary.Base64;
 
+import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.HandlerResolver;
 import java.io.File;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Map;
 
 
 public class eCircleTest {
-    private static final String realm = "https://secure.ecircle-ag.com/cm42/"; // platform option
-    private static final String user = "mmazur@opentext.com";                 // platform option
-    private static final String password = "Test00?";                       // platform option
+    private static final String m_soapURL = "https://secure.ecircle-ag.com/cm42/api/soap/v2/"; // platform option
+    private static final String m_username = "mmazur@opentext.com";                 // platform option
+    private static final String m_userpassword = "Test00?";                       // platform option
     private static final String DRAFT_MESSAGE_NAME = "myMsg";
     private static final long DRAFT_MESSAGE_ID = 401444594; // runtime
 
@@ -27,15 +30,7 @@ public class eCircleTest {
     public static void main(String[] args) throws InvalidParameterException_Exception, NoSuchObjectException_Exception, UnexpectedErrorException_Exception, ObjectAlreadyExistsException_Exception, IOException, AsyncException_Exception, InterruptedException {
 
 
-        Authenticator.setDefault(new Authenticator()
-        {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(user, password.toCharArray());
-            }
-        });
-
-        if (true)
+        if (false)
         {
             final String authUser = "";
             final String authPassword = "";
@@ -58,20 +53,35 @@ public class eCircleTest {
             System.setProperty("http.proxyPassword", authPassword);
         }
 
-        EcmWS ecmService = new EcmWS();
+        EcmWS ecm = new EcmWS();
         HandlerResolver myHanlderResolver = new MyHandlerResolver();
-        ecmService.setHandlerResolver(myHanlderResolver);
+        ecm.setHandlerResolver(myHanlderResolver);
         System.out.println("myHandlerResolver has been set.");
+        Ecm ecmService = ecm.getEcmWSPort();
 
-        User new_user;
-        String newuser = "wrong1108@opentext.com";
+        Map<String, Object> ctx = ((BindingProvider) ecmService).getRequestContext();
+        URL accessUrl = new URL(m_soapURL);
+        ctx.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, accessUrl.toExternalForm());
+        ctx.put(BindingProvider.USERNAME_PROPERTY, m_username);
+        ctx.put(BindingProvider.PASSWORD_PROPERTY, m_userpassword);
+
+        User new_user = new User();
+        String newuser_email = "wrong1108@open_text.com";
 
         try {
-            new_user = ecmService.getEcmWSPort().userGetByEmail(newuser);
+            new_user = ecmService.userGetByEmail(newuser_email);
         }
-        catch (NoSuchObjectException_Exception e)
+        catch (InvalidParameterException_Exception|NoSuchObjectException_Exception e)
         {
-            new_user  = ecmService.getEcmWSPort().userCreate(newuser, null, null);
+            try {
+                new_user  = ecmService.userCreate(newuser_email, null, null);
+            } catch (InvalidParameterException_Exception e1) {
+                e1.printStackTrace();  //To change
+            } catch (ObjectAlreadyExistsException_Exception e1) {
+                e1.printStackTrace();  //To change
+            } catch (UnexpectedErrorException_Exception e1) {
+                e1.printStackTrace();  //To change
+            }
             System.out.println("User created");
         }
 
@@ -103,7 +113,7 @@ public class eCircleTest {
             }
         }
 
-        ecmService.getEcmWSPort().messageSendTransactional(DRAFT_MESSAGE_ID, "6453820", new_user.getId(), messageContent);
+        ecmService.messageSendTransactional(DRAFT_MESSAGE_ID, "6453820", new_user.getId(), messageContent);
 //        Thread.sleep(500);
 //        List<AsyncResult> resultList = ecmService.getEcmWSPort().asyncPoll("response", 100);
 //
