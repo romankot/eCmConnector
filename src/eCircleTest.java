@@ -9,6 +9,7 @@ import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class eCircleTest {
     static {
         m_attachments.add("C:\\tmp\\eCmTriger.xml");
         m_attachments.add("C:\\tmp\\test.zip");
+        m_attachments.add("C:\\tmp\\sport.pdf");
     }
 
     public static void main(String[] args) throws InvalidParameterException_Exception, NoSuchObjectException_Exception, UnexpectedErrorException_Exception, ObjectAlreadyExistsException_Exception, IOException, AsyncException_Exception, InterruptedException {
@@ -66,7 +68,7 @@ public class eCircleTest {
         ctx.put(BindingProvider.PASSWORD_PROPERTY, m_userpassword);
 
         User new_user = new User();
-        String newuser_email = "wrong1108@open_text.com";
+        String newuser_email = "rkot@opentext.com";
 
         try {
             new_user = ecmService.userGetByEmail(newuser_email);
@@ -98,13 +100,28 @@ public class eCircleTest {
         messageContent.getParameters().add(attribute);
 
         // adding attachments
-        if (m_attachments.size() > 10)
+        if (true)
         {
             for (String attach_item : m_attachments)
             {
                 Attachment attachment = new Attachment();
-                attachment.setName(new File(attach_item).getName() );
-                attachment.setContentType("text/binary");
+                Path path = new File(attach_item).toPath();
+                attachment.setName(path.getFileName().toString() );
+                String contentType = null;
+                try
+                {
+                    contentType = Files.probeContentType(path);
+                }
+                catch ( IOException e)
+                {
+                    e.printStackTrace();
+                }
+
+                if (contentType == null )
+                {
+                    contentType = "text/binary";
+                }
+                attachment.setContentType(contentType);
                 byte[] atta_bytes = Files.readAllBytes(Paths.get(attach_item));
                 byte[] atta_encoded = Base64.encodeBase64(atta_bytes);
                 String printMe = new String(atta_encoded, "US-ASCII");

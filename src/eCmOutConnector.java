@@ -13,6 +13,7 @@ import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -204,8 +205,28 @@ public class eCmOutConnector implements StrsConnectable
                 for (String attach_item : m_attachments)
                 {
                     Attachment attachment = new Attachment();
-                    attachment.setName(new File(attach_item).getName() );
-                    attachment.setContentType("text/binary");
+                    Path path = new File(attach_item).toPath();
+                    attachment.setName(path.getFileName().toString());
+                    String contentType = null;
+                    try
+                    {
+                        contentType = Files.probeContentType(path);
+                    }
+                    catch ( IOException e)
+                    {
+                        logError(e.getLocalizedMessage());
+                    }
+                    catch (SecurityException e)
+                    {
+                        logError("If a security manager is installed and it denies an unspecified permission required by a file type detector implementation." + e.getLocalizedMessage());
+                    }
+
+                    if (contentType == null )
+                    {
+                        contentType = "text/binary";
+                        logError("Unable to determine content type of attachment file. Please verify if file is not corrupted. File will be sent as text/binary");
+                    }
+                    attachment.setContentType(contentType);
                     byte[] atta_bytes = Files.readAllBytes(Paths.get(attach_item));
                     byte[] atta_encoded = Base64.encodeBase64(atta_bytes);
                     String printMe = new String(atta_encoded, "US-ASCII");
