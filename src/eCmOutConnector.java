@@ -9,9 +9,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.HandlerResolver;
 import java.io.*;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-import java.net.URL;
+import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,6 +65,10 @@ public class eCmOutConnector implements StrsConnectable
     private ByteArrayOutputStream outputStream;
     private static ArrayList<String> m_attachments = new ArrayList<String>();
     private static ArrayList<String> m_recipients = new ArrayList<String>();
+
+    public eCmOutConnector() {
+    //   MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector");
+    }
 
     @Override
     public boolean strsoStartJob(StrsConfigVals strsConfigVals) throws RemoteException {
@@ -211,6 +213,7 @@ public class eCmOutConnector implements StrsConnectable
                     try
                     {
                         contentType = Files.probeContentType(path);
+                        //contentType = null;
                     }
                     catch ( IOException e)
                     {
@@ -223,8 +226,17 @@ public class eCmOutConnector implements StrsConnectable
 
                     if (contentType == null )
                     {
-                        contentType = "text/binary";
-                        logError("Unable to determine content type of attachment file. Please verify if file is not corrupted. File will be sent as text/binary");
+                        FileNameMap fileNameMap = URLConnection.getFileNameMap();
+                        contentType = fileNameMap.getContentTypeFor(path.toString());
+                        if (path.toString().endsWith("pdf") && !contentType.contains("pdf"))
+                        {
+                            contentType = "application/pdf";
+                        }
+                        if (contentType == null)
+                        {
+                            contentType = "text/plain";
+                        }
+                        logDebug("Attachment will be send as " + contentType);
                     }
                     attachment.setContentType(contentType);
                     byte[] atta_bytes = Files.readAllBytes(Paths.get(attach_item));

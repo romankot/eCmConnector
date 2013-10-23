@@ -5,9 +5,7 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.HandlerResolver;
 import java.io.File;
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-import java.net.URL;
+import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,13 +22,13 @@ public class eCircleTest {
 
     private static ArrayList<String> m_attachments = new ArrayList<String>();
     static {
-        m_attachments.add("C:\\tmp\\eCmTriger.xml");
+        //m_attachments.add("C:\\tmp\\eCmTriger.xml");
         m_attachments.add("C:\\tmp\\test.zip");
         m_attachments.add("C:\\tmp\\sport.pdf");
+       // MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector");
     }
 
     public static void main(String[] args) throws InvalidParameterException_Exception, NoSuchObjectException_Exception, UnexpectedErrorException_Exception, ObjectAlreadyExistsException_Exception, IOException, AsyncException_Exception, InterruptedException {
-
 
         if (false)
         {
@@ -105,12 +103,15 @@ public class eCircleTest {
             for (String attach_item : m_attachments)
             {
                 Attachment attachment = new Attachment();
-                Path path = new File(attach_item).toPath();
+                File file = new File(attach_item);
+                Path path = file.toPath();
                 attachment.setName(path.getFileName().toString() );
                 String contentType = null;
                 try
                 {
                     contentType = Files.probeContentType(path);
+                    System.out.println("Probe returned " + contentType);
+                    contentType = null;
                 }
                 catch ( IOException e)
                 {
@@ -119,7 +120,10 @@ public class eCircleTest {
 
                 if (contentType == null )
                 {
-                    contentType = "text/binary";
+                    FileNameMap fileNameMap = URLConnection.getFileNameMap();
+                    contentType = fileNameMap.getContentTypeFor(path.toString());
+                    System.out.println("java.net.URL returns: " + contentType);
+                    //  output : application/msword
                 }
                 attachment.setContentType(contentType);
                 byte[] atta_bytes = Files.readAllBytes(Paths.get(attach_item));
