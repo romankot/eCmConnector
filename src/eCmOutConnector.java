@@ -39,7 +39,7 @@ public class eCmOutConnector implements StrsConnectable
     private static final String MESSAGE_ID = "Message ID";  // runtime
     private static final String CUSTOM_VALUE = "Custom Value";
 
-    StrsServiceable m_service = null;
+    private StrsServiceable m_service = null;
     private static final String ATTACHMENT1 = "Attachment #1";
     private static final String ATTACHMENT2 = "Attachment #2";
     private static final String ATTACHMENT3 = "Attachment #3";
@@ -62,19 +62,26 @@ public class eCmOutConnector implements StrsConnectable
     private long m_messageId;      // rt field
     private String m_custom_value = ""; // rt field
 
-    private ByteArrayOutputStream outputStream;
-    private static ArrayList<String> m_attachments = new ArrayList<String>();
-    private static ArrayList<String> m_recipients = new ArrayList<String>();
+    private ByteArrayOutputStream m_outputStream = null;
+    private ArrayList<String> m_attachments = null;
+    private ArrayList<String> m_recipients = null;
+    private String m_jobid;
 
-    public eCmOutConnector() {
-    //   MimeUtil.registerMimeDetector("eu.medsea.mimeutil.detector.MagicMimeMimeDetector");
+    public eCmOutConnector()
+    {
+        m_service = null;
+        m_outputStream = new ByteArrayOutputStream();
+        m_attachments = new ArrayList<String>();
+        m_recipients = new ArrayList<String>();
     }
 
     @Override
     public boolean strsoStartJob(StrsConfigVals strsConfigVals) throws RemoteException {
+
         try
         {
-            LoadStrsConfigVals(strsConfigVals);
+            LoadPlatformConfig(strsConfigVals);
+            //logDebug("enter StartJob");
         }
         catch (ConfigurationException e)
         {
@@ -86,9 +93,10 @@ public class eCmOutConnector implements StrsConnectable
 
     @Override
     public boolean strsoOpen(StrsConfigVals strsConfigVals) throws RemoteException {
+        //logDebug("enter StrsOpen");
         try
         {
-            LoadStrsConfigVals(strsConfigVals);
+            LoadRuntimeConfig(strsConfigVals);
         }
         catch (ConfigurationException e)
         {
@@ -96,17 +104,18 @@ public class eCmOutConnector implements StrsConnectable
             return false;
         }
 
-        outputStream = new ByteArrayOutputStream();
+        m_outputStream = new ByteArrayOutputStream();
         return true;
     }
 
     @Override
     public boolean strsoWrite(byte[] bytes) throws RemoteException {
+        //logDebug("enter StrsWrite");
         if(bytes != null)
         {
             try
             {
-                outputStream.write(bytes);
+                m_outputStream.write(bytes);
                 return true;
             }
             catch (IOException e) {
@@ -121,11 +130,12 @@ public class eCmOutConnector implements StrsConnectable
 
     @Override
     public boolean strsoClose(StrsConfigVals strsConfigVals) throws RemoteException {
-
+        //logDebug("enter StartClose");
         try
         {
             m_recipients.clear();
-            LoadStrsConfigVals(strsConfigVals);
+            m_attachments.clear();
+            LoadRuntimeConfig(strsConfigVals);
 
             if ( !m_proxyserver.isEmpty() && !m_proxyserver_port.isEmpty() )
             {
@@ -172,7 +182,9 @@ public class eCmOutConnector implements StrsConnectable
             logDebug("m_Message_id: " + m_messageId);
             logDebug("m_custom_value: " + m_custom_value);
             logDebug("m_log_control_xml_filename: " + m_log_control_xml_filename);
-
+            for ( String att : m_attachments) {
+                logDebug("m_attachment: " + att);
+            }
 
             EcmWS ecm = new EcmWS();
 
@@ -194,7 +206,7 @@ public class eCmOutConnector implements StrsConnectable
             // adding message body
             Attribute attribute = new Attribute();
             attribute.setName("MSG_BODY");
-            attribute.setValue(outputStream.toString());
+            attribute.setValue(m_outputStream.toString());
             messageContent.getParameters().add(attribute);
             Attribute attribute2 = new Attribute();
             attribute2.setName("SUBJECT");
@@ -236,7 +248,7 @@ public class eCmOutConnector implements StrsConnectable
                         {
                             contentType = "text/plain";
                         }
-                        logDebug("Attachment will be send as " + contentType);
+                        logDebug("Attachment will be send like " + contentType);
                     }
                     attachment.setContentType(contentType);
                     byte[] atta_bytes = Files.readAllBytes(Paths.get(attach_item));
@@ -319,11 +331,7 @@ public class eCmOutConnector implements StrsConnectable
             logError(e.getLocalizedMessage());
             return false;
         }
-        catch (ConfigurationException e)
-        {
-            logError(e.getLocalizedMessage());
-            return false;
-        }
+
         catch (Exception e)
         {
             logError(e.getLocalizedMessage());
@@ -334,15 +342,89 @@ public class eCmOutConnector implements StrsConnectable
 
     @Override
     public boolean strsoEndJob() throws RemoteException {
+        //logDebug("enter EndJob");
+        return true;
+    }
+
+    private boolean LoadRuntimeConfig(StrsConfigVals cfg) throws RemoteException, ConfigurationException{
+
+        //reading runtime fields
+        String recipient = cfg.getValue(RECIPIENT);
+        if (recipient != null && recipient.length() > 0)
+        {
+            m_recipient = recipient;
+        }
+
+        String ccemail = "";
+        ccemail = cfg.getValue(CC_EMAIL);
+
+        if (ccemail != null && ccemail.length() > 0)
+        {
+            m_cc_email = ccemail;
+        }
+
+        String bccemail = "";
+        bccemail = cfg.getValue(BCC_EMAIL);
+
+        if (bccemail != null && bccemail.length() > 0)
+        {
+            m_bcc_email = bccemail;
+        }
+
+        String subject = cfg.getValue(SUBJECT);
+        if (subject != null && subject.length() > 0)
+        {
+            m_subject = subject;
+        }
+
+        String message_id = cfg.getValue(MESSAGE_ID);
+        if (message_id != null && message_id.length() > 0)
+        {
+            m_messageId = Long.parseLong(message_id);
+        }
+
+        String custom_value = cfg.getValue(CUSTOM_VALUE);
+        if (custom_value != null && custom_value.length() > 0)
+        {
+            m_custom_value = custom_value;
+        }
+
+        m_attachments.clear();
+        String attachment_url = cfg.getValue(ATTACHMENT1);
+        if (attachment_url != null && attachment_url.length() > 0)
+        {
+            m_attachments.add(attachment_url);
+        }
+        String attachment_url2 = cfg.getValue(ATTACHMENT2);
+        if (attachment_url2 != null && attachment_url2.length() > 0)
+        {
+            m_attachments.add(attachment_url2);
+        }
+        String attachment_url3 = cfg.getValue(ATTACHMENT3);
+        if (attachment_url3 != null && attachment_url3.length() > 0)
+        {
+            m_attachments.add(attachment_url3);
+        }
+        String attachment_url4 = cfg.getValue(ATTACHMENT4);
+        if (attachment_url4 != null && attachment_url4.length() > 0)
+        {
+            m_attachments.add(attachment_url4);
+        }
+        String attachment_url5 = cfg.getValue(ATTACHMENT5);
+        if (attachment_url5 != null && attachment_url5.length() > 0)
+        {
+            m_attachments.add(attachment_url5);
+        }
+
         return true;
     }
 
     // Utility methods
-    private boolean LoadStrsConfigVals(StrsConfigVals cfg) throws RemoteException, ConfigurationException
+    private boolean LoadPlatformConfig(StrsConfigVals cfg) throws RemoteException, ConfigurationException
     {
         if (cfg == null)
         {
-            logError("LoadStrsConfigVals(StrsConfigVals cfg) is not correct");
+            logError("LoadPlatformConfig(StrsConfigVals cfg) is not correct");
             return false;
         }
 
@@ -351,6 +433,8 @@ public class eCmOutConnector implements StrsConnectable
         {
             m_service = service;
         }
+
+        m_jobid = cfg.getSystemValue("jobid");
 
 // reading platform fields
         String soapURL = cfg.getValue(SOAP_URL);
@@ -400,94 +484,13 @@ public class eCmOutConnector implements StrsConnectable
         {
             m_log_control_xml_filename = log_ctrlxml_filename;
         }
-
-//reading runtime fields
-        String recipient = cfg.getValue(RECIPIENT);
-        if (recipient != null && recipient.length() > 0)
-        {
-            m_recipient = recipient;
-        }
-
-        String ccemail = "";
-        ccemail = cfg.getValue(CC_EMAIL);
-
-        if (ccemail != null && ccemail.length() > 0)
-        {
-            m_cc_email = ccemail;
-        }
-
-        String bccemail = "";
-        bccemail = cfg.getValue(BCC_EMAIL);
-
-        if (bccemail != null && bccemail.length() > 0)
-        {
-            m_bcc_email = bccemail;
-        }
-
-        String subject = cfg.getValue(SUBJECT);
-        if (subject != null && subject.length() > 0)
-        {
-            m_subject = subject;
-        }
-
-        String message_id = cfg.getValue(MESSAGE_ID);
-        if (message_id != null && message_id.length() > 0)
-        {
-            m_messageId = Long.parseLong(message_id);
-        }
-
-        String custom_value = cfg.getValue(CUSTOM_VALUE);
-        if (custom_value != null && custom_value.length() > 0)
-        {
-            m_custom_value = custom_value;
-        }
-
-        /*String create_user = cfg.getValue(eCmOutConnector.CREATE_USER);
-        if (create_user != null && create_user.length() > 0)
-        {
-            if (create_user.equals("true"))
-            {
-                m_create_recp = true;
-            }
-            else
-            {
-                m_create_recp = false;
-            }
-        }*/
-        m_attachments.clear();
-        String attachment_url = cfg.getValue(ATTACHMENT1);
-        if (attachment_url != null && attachment_url.length() > 0)
-        {
-            m_attachments.add(attachment_url);
-        }
-        String attachment_url2 = cfg.getValue(ATTACHMENT2);
-        if (attachment_url2 != null && attachment_url2.length() > 0)
-        {
-            m_attachments.add(attachment_url2);
-        }
-        String attachment_url3 = cfg.getValue(ATTACHMENT3);
-        if (attachment_url3 != null && attachment_url3.length() > 0)
-        {
-            m_attachments.add(attachment_url3);
-        }
-        String attachment_url4 = cfg.getValue(ATTACHMENT4);
-        if (attachment_url4 != null && attachment_url4.length() > 0)
-        {
-            m_attachments.add(attachment_url4);
-        }
-        String attachment_url5 = cfg.getValue(ATTACHMENT5);
-        if (attachment_url5 != null && attachment_url5.length() > 0)
-        {
-            m_attachments.add(attachment_url5);
-        }
-
         return true;
     }
     private void logError(String message) throws RemoteException
     {
         if (m_service != null)
         {
-            m_service.writeMsg(StrsServiceable.MSG_ERROR, 0, "JAVA eCmOutConnector ERROR: " + message);
+            m_service.writeMsg(StrsServiceable.MSG_ERROR, 0, "jobID: " + m_jobid + " eCmOutConnector ERROR: " + message);
         }
         else
         {
@@ -499,7 +502,7 @@ public class eCmOutConnector implements StrsConnectable
     {
         if (m_service != null)
         {
-            m_service.writeMsg(StrsServiceable.MSG_DEBUG, 4, "JAVA eCmOutConnector: " + message);
+            m_service.writeMsg(StrsServiceable.MSG_DEBUG, 4, "jobID: " + m_jobid + " eCmOutConnector: "+ message);
         }
         else
         {
